@@ -68,12 +68,11 @@ func (c *Cache) Add(key string, value Value) {
 		kv := ele.Value.(*entry)
 		c.nBytes += int64(value.Len()) - int64(kv.value.Len())
 		kv.value = value
-		return
+	} else { // 不存在则添加
+		ele := c.ll.PushFront(&entry{key, value})
+		c.cache[key] = ele
+		c.nBytes += int64(len(key)) + int64(value.Len())
 	}
-
-	ele := c.ll.PushFront(&entry{key, value})
-	c.cache[key] = ele
-	c.nBytes += int64(len(key)) + int64(value.Len())
 
 	// 超过设置的最大内存, 循环移除无效节点直到内存足够
 	for c.maxBytes != 0 && c.maxBytes < c.nBytes {
