@@ -36,7 +36,7 @@ func (c *Cache) Add(key string, value Value) {
 		c.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)
 		// 重新计算nByte（此刻key没变，计算不用考虑key）
-		c.nBytes += int64(kv.value.Len()) - int64(value.Len())
+		c.nBytes += int64(value.Len()) - int64(kv.value.Len())
 		// 存在则替换value
 		kv.value = value
 	} else { // 不存在
