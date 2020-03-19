@@ -22,15 +22,15 @@ func (c *Cache) add(key string, v ByteView) {
 	c.lru.Add(key, v)
 }
 
-func (c *Cache) get(key string) (ByteView, error) {
+func (c *Cache) get(key string) (ByteView, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if v, ok := c.lru.Get(key); ok {
-		return v.(ByteView), nil
+		return v.(ByteView), ok
 	}
 
-	return ByteView{}, nil
+	return ByteView{}, false
 }
 
 
