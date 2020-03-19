@@ -6,16 +6,17 @@ import (
 )
 
 type Cache struct {
-	mu  sync.Mutex
-	lru *lru.Cache
+	mu       sync.Mutex
+	lru      *lru.Cache
+	maxBytes int64
 }
 
-func (c *Cache) add(key string, maxBytes int64, v ByteView) {
+func (c *Cache) add(key string, v ByteView) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if c.lru == nil { // 延时加载
-		c.lru = lru.NewCache(maxBytes)
+		c.lru = lru.NewCache(c.maxBytes)
 	}
 
 	c.lru.Add(key, v)
