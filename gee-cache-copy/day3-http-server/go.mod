@@ -1,4 +1,4 @@
-module example
+module http-server
 
 go 1.12
 

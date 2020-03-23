@@ -13,7 +13,7 @@ type Getter interface {
 type GetterFunc func(key string) ([]byte, error)
 
 func (g GetterFunc) Get(key string) ([]byte, error) {
-	return g.Get(key)
+	return g(key)
 }
 
 type Group struct {
@@ -24,7 +24,7 @@ type Group struct {
 
 var (
 	mu     sync.RWMutex // 读多于写,使用读写锁即可
-	groups map[string]*Group
+	groups = make(map[string]*Group)
 )
 
 func NewGroup(name string, cacheBytes int64, getter Getter) *Group {
@@ -50,34 +50,34 @@ func GetGroup(name string) (*Group, error) {
 	return nil, fmt.Errorf("fail to find the group")
 }
 
-func (g *Group) Get(key string) ([]byte, error) {
+func (g *Group) Get(key string) (ByteView, error) {
 	if key == "" { // 外部调用时，需要对key作校验
-		return nil, fmt.Errorf("key is required")
+		return ByteView{}, fmt.Errorf("key is required")
 	}
 
 	if view, ok := g.mainCache.get(key); ok {
 		log.Printf("GeeCache hit [%s]\n", key)
-		return view.ByteSlice(), nil
+		return view, nil
 	}
 
 	// 缓存中不存在,则去加载
 	return g.load(key)
 }
 
-func (g *Group) load(key string) ([]byte, error) {
+func (g *Group) load(key string) (ByteView, error) {
 	return g.getLocally(key) // 还可以调用远程的方法
 }
 
-func (g *Group) getLocally(key string) ([]byte, error) {
+func (g *Group) getLocally(key string) (ByteView, error) {
 	bytes, err := g.getter.Get(key)
 	if err != nil {
-		return nil, err
+		return ByteView{}, err
 	}
 
 	// 缓存到本地
 	v := ByteView{bytes}
 	g.populateCache(key, v)
-	return bytes, nil
+	return v, nil
 }
 
 func (g *Group) populateCache(key string, v ByteView) {

@@ -17,3 +17,7 @@ func cloneByteView(b []byte) []byte {
 	copy(cp, b)
 	return cp
 }
+
+func (v ByteView) String() string {
+	return string(v.ByteSlice())
+}
