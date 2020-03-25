@@ -2,8 +2,10 @@ package geecache
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -56,3 +58,36 @@ func (h *HttPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	_, _ = w.Write(bytes.ByteSlice())
 }
+
+// 实现HttPPool的客户端
+
+// HttpGetter是客户端HttPPool发请求的主体
+type HttpGetter struct {
+	baseURL string // 表示将要访问的节点地址,http://example.com/_geecache/
+}
+
+// 实现客户端的Get方法
+func (h *HttpGetter) Get(group, key string) ([]byte, error) {
+	// http://example.com/_geecache/<gourpname>/<key>
+	u := fmt.Sprintf("%v%v/%v",
+		h.baseURL,
+		url.QueryEscape(group),
+		url.QueryEscape(key))
+
+	resp, err := http.Get(u)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("excepted httpCode 200, but get %d", resp.StatusCode)
+	}
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
+}
+
