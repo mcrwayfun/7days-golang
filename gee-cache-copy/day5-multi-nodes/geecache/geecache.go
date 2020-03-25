@@ -20,6 +20,7 @@ type Group struct {
 	name      string // 每个group的名字,不应该重复
 	mainCache *Cache // key为name,value为name对应的缓存数据
 	getter    Getter // 回调函数
+	peers     PeerPicker
 }
 
 var (
@@ -65,6 +66,12 @@ func (g *Group) Get(key string) (ByteView, error) {
 }
 
 func (g *Group) load(key string) (ByteView, error) {
+	if g.peers != nil { // 设置了远程节点
+		if getter, ok := g.peers.PickPeer(key); ok { // 存在且非本地节点
+			return g.getFromPeer(getter,key)
+		}
+		log.Printf("fail to get from peer")
+	}
 	return g.getLocally(key) // 还可以调用远程的方法
 }
 
@@ -82,4 +89,24 @@ func (g *Group) getLocally(key string) (ByteView, error) {
 
 func (g *Group) populateCache(key string, v ByteView) {
 	g.mainCache.add(key, v)
+}
+
+// gee cache中实现主流程
+
+// 实现RegisterPeers, 将HttPPool注入到Group中
+func (g *Group) RegisterPeers(picker PeerPicker) {
+	if g.peers != nil {
+		panic("can't register peers more than once")
+	}
+	g.peers = picker
+}
+
+// 通过HttpGet方法获取缓存后并返回
+func (g *Group) getFromPeer(getter PeerGetter, key string) (ByteView, error) {
+	bytes, err := getter.Get(g.name, key)
+	if err != nil {
+		return ByteView{}, err
+	}
+
+	return ByteView{bytes}, nil
 }

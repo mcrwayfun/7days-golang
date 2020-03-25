@@ -24,8 +24,6 @@ type HttPPool struct {
 	mu          sync.Mutex
 }
 
-
-
 func NewHttPPool(self string) *HttPPool {
 	return &HttPPool{
 		self:     self,
