@@ -59,7 +59,7 @@ func (h *HttPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 使用group.Get获取缓存
 	bytes, err := group.Get(key)
 	if err != nil {
-		http.Error(w, "no such key", 404)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -129,3 +129,7 @@ func (h *HttPPool) PickPeer(key string) (PeerGetter, bool) {
 	}
 	return nil, false
 }
+
+var _ PeerGetter = (*httpGetter)(nil)
+
+var _ PeerPicker = (*HttPPool)(nil)
